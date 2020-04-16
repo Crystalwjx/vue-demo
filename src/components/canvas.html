@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  
+</body>
+</html>
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script>
+  window.onload = function() {
+    drawboxs()
+    startgroup()
+  }
+  $('body').append('<canvas id="SPACESAMPLE"></canvas>')
+  var cvs = document.getElementById("SPACESAMPLE");
+  $('header').hide();
+  cvs.style.zIndex=900;
+  cvs.style.position = 'absolute';
+  cvs.style.top = 0;
+  cvs.style.left = 0;
+  cvs.width = document.documentElement.clientWidth;
+  cvs.height = 969;
+  var ctx=cvs.getContext("2d");
+  ctx.fillRect(0, 0, cvs.width, cvs.height);
+/*
+ * test.js
+ *
+ * 测试条目类型 调用外部JS.
+ */
+ var boxs= [[843,581],[528,449],[715,266],[865,80],[623,43],[342,621],[120,544],[196,376],[301,153],[104,43]];
+var spaces = [
+	[3,10],[7,4],
+	[1,9,3],[8,2,7],
+	[4,9,1,6],[10,6,2,7],
+	[6,5,1,4,8],[5,7,9,8,2],
+	[4,1,9,3,8,10],[9,2,6,7,3,5],
+	[10,1,6,4,8,5,7],[2,6,3,8,2,10,1],
+	[7,3,10,5,7,8,4,9],[6,9,3,2,1,7,10,5],
+	[5,8,4,10,7,3,1,9,6],[8,2,6,1,10,3,7,4,9]
+];
+var spaces1 = [
+	[7,4],[3,10],
+	[8,2,7],[1,9,3],
+	[10,6,2,7],[4,9,1,6],
+	[5,7,9,8,2],[6,5,1,4,8],
+	[9,2,6,7,3,5],[4,1,9,3,8,10],
+	[2,6,3,8,2,10,1],[10,1,6,4,8,5,7],
+	[6,9,3,2,1,7,10,5],[7,3,10,5,7,8,4,9],
+	[8,2,6,1,10,3,7,4,9],[5,8,4,10,7,3,1,9,6]
+];
+var result = [
+	0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0
+];
+var demobox = [8,3]; //示例的闪烁顺序
+var cvs;
+var ctx;
+var boxindex = 0; //方块的索引
+var arrayindex = 0; //数组的索引
+var boxreverse = 0; //反向标志
+var bPress = 0; //是否允许按下方块
+var keyvalue = 0; //按键值
+var waitkeyindex = 0; //等待按键的索引
+var bKeyCheck = 0; //判断按键是否正确
+var waittime = null; //等待的Time句柄
+var demo = 0; //是否示例
+var sounddi = 'assets/img/mccb/w07-02.wav'; //提示音的路径
+var soundstart = 'assets/img/mccb/w06-02.wav'; //开始的声音路径
+
+//////////////////////
+//调试用变量
+/////////////////////
+var texttop = 30;
+function showtext(txt){
+	ctx.fillText(txt,20,texttop);
+	texttop+=30;
+}
+
+function doSpaceSample(id){
+	demo = 1;
+	doJsStart(id);
+}
+
+function doSpaceSampleReverse(id){
+	demo = 1;
+	boxreverse = 1;
+	doJsStart(id);
+}
+
+function doSpaceTest(id){
+	doJsStart(id);
+}
+
+function doSpaceReverse(id){
+	boxreverse = 1;
+	doJsStart(id);
+}
+
+function doJsStart(id){
+	cvs = document.getElementById(id);
+	cvs.addEventListener("mousedown", doMouseDown, false);
+	cvs.addEventListener("mouseup", doMouseUp, false);
+	ctx = cvs.getContext("2d");
+	ctx.font="24px Microsoft-Yahei";
+	drawboxs();
+    startgroup();
+	return 1;
+}
+
+function saveresult(){
+	valueid = '';
+	if(boxreverse){
+		//反向的
+		valueid = 'SPACE-R-';
+	}else{
+		//正向的
+		valueid = 'SPACE-';
+	}
+	result.forEach(function(value, index, array) {
+		$('#'+ valueid + (index+1)).val(value);
+	});
+	$("#btnsubmit").click(); //自动提交
+}
+
+function startgroup(){
+	if(waittime!=null){
+		clearTimeout(waittime);
+	}
+	if(demo){//示例
+        boxindex = 0;
+		bPress = 0;
+		if(!boxreverse){
+		   waitkeyindex = 0;  //等待按键的索引
+		}else{
+		   waitkeyindex = 1;  //等待按键的索引
+		}
+		
+		drawtipstartlayer("现在开始"); //画提示层
+		playquestionsound(soundstart);
+		setTimeout("donext()",2000);
+		return;
+	}
+	if(boxreverse){//反向的用Spaces1数组
+		ln = spaces1.length;
+	}else{
+		ln = spaces.length;
+	}
+	if(arrayindex < ln){
+		boxindex = 0; //当前数组里的BOX索引
+		bPress = 0; // 是否允许按键
+		bKeyCheck = 1; //判断按键是否正确
+		if(!boxreverse){
+			waitkeyindex = 0;  //等待按键的索引
+		}else{
+			waitkeyindex = spaces1[arrayindex].length-1;  //等待按键的索引
+		}
+		drawtipstartlayer("现在开始"); //画提示层
+		playquestionsound(soundstart);
+	    setTimeout("donext()",2000);
+	}else{
+		//所有的组做完了
+		//就完事退出了
+		saveresult();
+	}
+}
+
+//检查输入的按键是否正确
+// bKeyCheck 在启动新组的时候默认为 1 有按键不正确的就变成0
+function checkwaitkey(){
+    if(demo){
+		//示例的情况下，错了给出提示
+		if(keyvalue != demobox[waitkeyindex]){
+			//按错了,给出提示，再闪一次
+			drawtipstartlayer("按错了"); //画提示层
+			playquestionsound(sounddi);
+            flashbox(demobox[waitkeyindex]-1);
+		}else{
+			if(!boxreverse){
+				waitkeyindex++;
+				if(waitkeyindex > 1){
+					//全按对了，提示是否还练一次
+					drawtestbuttons();
+					//$("#btnsubmit").click(); //自动提交
+					//alert('搞定退出了');
+				}
+			}else{
+				waitkeyindex--;
+				if(waitkeyindex < 0){
+					//全按对了，提示是否还连一次
+					drawtestbuttons();
+					//$("#btnsubmit").click(); //自动提交
+					//alert('搞定退出了');
+				}
+			}
+		}
+		return;
+	}
+	if(boxreverse){
+       if(keyvalue != spaces1[arrayindex][waitkeyindex]){
+		   bKeyCheck = 0;
+	   }
+	   waitkeyindex--; //不用管是否正确
+	   if(waitkeyindex < 0){
+		   //全部按完了，保存检查结果到值域
+		   //showtext(bKeyCheck);
+           result[arrayindex] = bKeyCheck;
+		   //判断是否需要跳出
+		   if(arrayindex%2 == 1){
+			   if( (result[arrayindex]+result[arrayindex-1])==0 ){
+				   //直接退出吧 
+				   saveresult();
+				   return;
+			   }
+		   }
+		   //进行下一话题
+		   arrayindex++;
+		   setTimeout("startgroup()",1000);
+	   }else{
+		   //还要等待，就继续计时
+			if(waittime==null){
+				waittime = setTimeout("drawbuttons()",15000); //15秒之后显示提示按钮
+				//showtext('开始计时');
+			}
+	   }
+	}else{
+		if(keyvalue != spaces[arrayindex][waitkeyindex]){
+			bKeyCheck = 0;
+		}
+		waitkeyindex++; //不用管是否正确
+		if(waitkeyindex > spaces[arrayindex].length-1){
+			//全部按完了，保存检查结果到值域
+			//showtext(bKeyCheck);
+			result[arrayindex] = bKeyCheck;
+			//判断是否需要跳出
+			if(arrayindex%2 == 1){
+				if( (result[arrayindex]+result[arrayindex-1])==0 ){
+					//直接退出吧 
+					saveresult();
+					return;
+				}
+			}
+			//进行下一话题
+			arrayindex++;
+			setTimeout("startgroup()",1000);
+		}else{
+			//还要等待，就继续计时
+			 if(waittime==null){
+				 waittime = setTimeout("drawbuttons()",15000); //15秒之后显示提示按钮
+				 //showtext('开始计时');
+			 }
+		}
+	}
+}
+
+function donext(){
+	if(demo){
+		//示例
+        if(boxindex < 2){
+			flashbox(demobox[boxindex] - 1);
+			boxindex++;
+		}else{
+			drawtipstartlayer("请操作"); //画提示层
+			playquestionsound(sounddi);
+			bPress = 1; //允许按键了
+		}
+		return;
+	}
+	if(boxreverse){//反向的用Spaces1数组
+	   if(boxindex < spaces1[arrayindex].length){
+		   flashbox(spaces1[arrayindex][boxindex] - 1);
+	   }else{
+		   drawtipstartlayer("请操作"); //画提示层
+		   playquestionsound(sounddi);
+		   bPress = 1;
+		   waittime = setTimeout("drawbuttons()",15000); //15秒之后显示提示按钮
+		   //showtext('开始计时');
+	   }
+	   boxindex++;
+	}else{
+		if(boxindex < spaces[arrayindex].length){
+			flashbox(spaces[arrayindex][boxindex] - 1);
+		}else{
+			drawtipstartlayer("请操作"); //画提示层
+			playquestionsound(sounddi);
+			bPress = 1;
+			waittime = setTimeout("drawbuttons()",15000); //15秒之后显示提示按钮
+			//showtext('开始计时');
+		}
+		boxindex++;
+	}
+}
+
+function flashbox(index){
+    ctx.fillStyle="#0000ff";
+	ctx.fillRect(boxs[index][0],boxs[index][1],102,102);
+	setTimeout("recovebox("+index+");",800);
+}
+
+function recovebox(index){
+	ctx.fillStyle="#00b0ff";
+	ctx.fillRect(boxs[index][0],boxs[index][1],102,102);
+	if(!bPress){//等待按键阶段，就不继续闪了
+		setTimeout("donext()",2000); //2秒钟之后继续
+	}
+}
+
+function doMouseDown(event){
+	if(!bPress){
+	   return;
+	}
+	if(!demo){
+		if(waittime!=null){ //取消15秒超时等待
+			clearTimeout(waittime);
+			waittime = null;
+			//showtext('停止计时');
+		}
+	}
+    var x = event.pageX;
+    var y = event.pageY;
+	var loc = getPointOnCanvas(cvs, x, y);
+	//alert("mouse down at point( x:" + loc.x + ", y:" + loc.y + ")");
+	// 判断在哪个区域内
+	keyvalue = 0;
+    boxs.forEach(function(value, m_index, array) {
+		if( (x>value[0]) && (x < value[0]+102) && (y>value[1]) && (y < value[1]+102) ){
+			keyvalue = m_index+1;
+            ctx.fillStyle="#0000ff";
+			ctx.fillRect(boxs[m_index][0],boxs[m_index][1],102,102);
+			//判断按键是否正确
+			checkwaitkey();
+		}
+	});
+}
+
+function doMouseUp(event) {  
+    if(keyvalue){
+		m_index = keyvalue - 1;
+		ctx.fillStyle="#00b0ff";
+		ctx.fillRect(boxs[m_index][0],boxs[m_index][1],102,102);
+	}else{ //没有按到方块时 继续等待
+		if(!demo){
+			if(waittime==null){
+				waittime = setTimeout("drawbuttons()",15000); //15秒之后显示提示按钮
+				//showtext('开始计时');
+			}
+		}
+	}
+}  
+
+function drawboxs(){
+	ctx.fillStyle="#ffffff";
+	ctx.fillRect(0,0,1024,768);
+	//画出所有Box
+	ctx.fillStyle="#00b0ff";
+	boxs.forEach(function(value, index, array) {
+		ctx.fillRect(value[0],value[1],102,102);
+	});
+}
+
+function drawtipstartlayer(str){
+	//画出提示开始层
+	$('body').append('<canvas id="bg_tip_canvas"></canvas>');
+	var cvstiplayer = document.getElementById('bg_tip_canvas');
+	cvstiplayer.width = cvs.width;
+	cvstiplayer.height = cvs.height;
+	cvstiplayer.style.position = 'absolute';
+    cvstiplayer.style.top = 0;
+    cvstiplayer.style.left = 0;
+	cvstiplayer.style.zIndex = 901;
+	var ctxtip = cvstiplayer.getContext("2d");
+	ctxtip.fillStyle='rgba(225,225,225,1)';
+	ctxtip.font="48px Microsoft-Yahei";
+	ctxtip.fillText(str,410,355);
+
+	setTimeout("cleartipstartlayer()",1000); //1秒钟之后清除开始提示层
+}
+
+function cleartipstartlayer(){
+	$('#bg_tip_canvas').remove();
+}
+
+function drawtestbuttons(){
+	waittime = null; //时间到了，不会等待了
+	playquestionsound(sounddi); //播放“滴”音
+	$('body').append('<canvas id="bg_canvas"></canvas>');
+	var cvsbutton = document.getElementById('bg_canvas');
+	cvsbutton.addEventListener("mousedown", ButtonLayerMouseDown, false);
+	cvsbutton.width = cvs.width;
+	cvsbutton.height = cvs.height;
+	cvsbutton.style.position = 'absolute';
+    cvsbutton.style.top = 0;
+    cvsbutton.style.left = 0;
+	cvsbutton.style.zIndex = 901;
+	var ctxbutton = cvsbutton.getContext("2d");
+	ctxbutton.fillStyle='rgba(225,225,225,0.5)';
+	ctxbutton.fillRect(0, 0, cvsbutton.width, cvsbutton.height);
+	ctxbutton.fillStyle='#666666';
+	ctxbutton.fillRect(360,320,150,60);
+	ctxbutton.fillRect(520,320,150,60);
+	ctxbutton.fillStyle='#ffffff';
+	ctxbutton.moveTo(359,319);
+	ctxbutton.lineTo(359+152,319);
+	ctxbutton.moveTo(519,319);
+	ctxbutton.lineTo(519+152,319);
+	ctxbutton.font="24px Microsoft-Yahei";
+	ctxbutton.fillText("继续练习",410,355);
+	ctxbutton.fillText("不练了",560,355);
+	ctxbutton.fillStyle='#000000';
+	ctxbutton.moveTo(359,319+62);
+	ctxbutton.lineTo(359+152,319+62);
+	ctxbutton.moveTo(519,319+62);
+	ctxbutton.lineTo(519+152,319+62);
+}
+
+function drawbuttons(){
+	waittime = null; //时间到了，不会等待了
+	playquestionsound(sounddi); //播放“滴”音
+	$('body').append('<canvas id="bg_canvas"></canvas>');
+	var cvsbutton = document.getElementById('bg_canvas');
+	cvsbutton.addEventListener("mousedown", ButtonLayerMouseDown, false);
+	cvsbutton.width = cvs.width;
+	cvsbutton.height = cvs.height;
+	cvsbutton.style.position = 'absolute';
+    cvsbutton.style.top = 0;
+    cvsbutton.style.left = 0;
+	cvsbutton.style.zIndex = 901;
+	var ctxbutton = cvsbutton.getContext("2d");
+	ctxbutton.fillStyle='rgba(225,225,225,0.5)';
+	ctxbutton.fillRect(0, 0, cvsbutton.width, cvsbutton.height);
+	ctxbutton.fillStyle='#666666';
+	ctxbutton.fillRect(360,320,150,60);
+	ctxbutton.fillRect(520,320,150,60);
+	ctxbutton.fillStyle='#ffffff';
+	ctxbutton.moveTo(359,319);
+	ctxbutton.lineTo(359+152,319);
+	ctxbutton.moveTo(519,319);
+	ctxbutton.lineTo(519+152,319);
+	ctxbutton.font="24px Microsoft-Yahei";
+	ctxbutton.fillText("继 续",410,355);
+	ctxbutton.fillText("忘记了",560,355);
+	ctxbutton.fillStyle='#000000';
+	ctxbutton.moveTo(359,319+62);
+	ctxbutton.lineTo(359+152,319+62);
+	ctxbutton.moveTo(519,319+62);
+	ctxbutton.lineTo(519+152,319+62);
+}
+
+//播放纯配音文件
+function playquestionsound(filepath){
+    stopquestionsound(); //先停止之前的
+    $('body').append('<audio id="m_bg_music"  src="' + filepath + '" autoplay=true onended="questionsoundend();" style="display:none;" />');
+    return false;
+}
+
+//停止播放配音
+function stopquestionsound(){
+    if(document.getElementById("m_bg_music")){ //播放元素存在
+        document.getElementById("m_bg_music").pause();
+        $('#m_bg_music').remove();
+    }
+    return false;
+}
+
+function questionsoundend(){
+    $('#m_bg_music').remove();
+}
+
+function getPointOnCanvas(canvas, x, y) {  
+    var bbox = canvas.getBoundingClientRect();  
+    return { x: x - bbox.left * (canvas.width  / bbox.width),  
+            y: y - bbox.top  * (canvas.height / bbox.height)  
+            };  
+}  
+
+function ButtonLayerMouseDown(event) {  
+    var x = event.pageX;  
+    var y = event.pageY;  
+    var canvas = event.target;  
+    var loc = getPointOnCanvas(canvas, x, y);  
+	//判断按下的是哪个键 
+	if( (x>360)&&(x<360+150)&&(y>320)&&(y<320+60) ){
+		//按下了继续键
+		if(demo){
+			// 再来一次
+			$('#bg_canvas').remove();
+			drawboxs();
+			startgroup();
+			return;
+		}
+		//回到过去
+		$('#bg_canvas').remove();
+		if(waittime==null){
+			waittime = setTimeout("drawbuttons()",15000); //15秒之后显示提示按钮
+		}
+	}else if( (x>520)&&(x<520+150)&&(y>320)&&(y<320+60) ){
+		if(demo){
+			$("#btnsubmit").click(); //自动提交
+			return;
+		}
+		//按下了忘记了键
+		// 这一组成绩记录为 0 - 失败 
+
+		//进行下一题
+		$('#bg_canvas').remove();
+		arrayindex++;
+		startgroup();//开始新的一组
+	}
+}  
+</script>
