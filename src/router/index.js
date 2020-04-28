@@ -5,7 +5,7 @@ import Login from '@/components/Login'
 import Signup from '@/components/Signup'
 import Notfound from '@/components/Notfound'
 import tableList from '@/components/page/tablelist'
-import formTest from '@/components/page/formtest'
+import randomPic from '@/components/page/randomPic'
 import canvasTest from '@/components/page/canvas'
 import table1 from '@/components/nav/nav1'
 import form1 from '@/components/nav/nav2'
@@ -23,7 +23,7 @@ export default new Router({
       component: Home,
       children: [
         { path: '/table', component: tableList, name: 'Table', },
-        { path: '/form', component: formTest, name: 'Form' },
+        { path: '/form', component: randomPic, name: 'Form' },
         {
           path: '/canvas', component: canvasTest, name: 'Canvas',
         },
