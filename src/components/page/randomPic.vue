@@ -7,9 +7,9 @@
            @click="turn(item)"
            class="pic">
         <img v-if="showpoker[item]"
-             src="@/assets/front.jpg" class="fadeOut animated">
+             src="@/assets/front.jpg">
         <img v-else
-             src="@/assets/back.jpg">
+             src="@/assets/back.jpg" class="fadeIn animated">
       </div>
     </div>
   </div>
@@ -150,12 +150,12 @@ export default {
 }
 
 .fadeOut {
-  -webkit-animation-name: fadeIn;
-  animation-name: fadeIn;
+  -webkit-animation-name: fadeOut;
+  animation-name: fadeOut;
 }
 .animated {
-  -webkit-animation-duration: 0.5s;
-  animation-duration: 0.5s;
+  -webkit-animation-duration: 1s;
+  animation-duration: 1s;
   -webkit-animation-fill-mode: both;
   animation-fill-mode: both;
 }
