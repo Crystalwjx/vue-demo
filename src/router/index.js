@@ -4,7 +4,7 @@ import Home from '@/components/Home'
 import Login from '@/components/Login'
 import Signup from '@/components/Signup'
 import Notfound from '@/components/Notfound'
-import tableList from '@/components/page/tablelist'
+import saolei from '@/components/page/saolei'
 import randomPic from '@/components/page/randomPic'
 import canvasTest from '@/components/page/canvas'
 import table1 from '@/components/nav/nav1'
@@ -22,7 +22,7 @@ export default new Router({
       iconCls: 'el-icon-share',
       component: Home,
       children: [
-        { path: '/table', component: tableList, name: 'Table', },
+        { path: '/saolei', component: saolei, name: 'saolei', },
         { path: '/form', component: randomPic, name: 'Form' },
         {
           path: '/canvas', component: canvasTest, name: 'Canvas',
